@@ -59,7 +59,7 @@ async def seed_from_scraper() -> None:
             )
             for plugin_data in plugins
         ]
-        
+
         # Bulk insert all plugins
         session.add_all(plugin_objects)
         logger.debug("Added plugins for bulk insert", count=len(plugin_objects))
@@ -118,7 +118,7 @@ async def seed_sample_packs() -> None:
     async with get_session() as session:
         # Create pack objects for bulk insert
         pack_objects = [Pack(**pack_data) for pack_data in sample_packs]
-        
+
         # Bulk insert all packs
         session.add_all(pack_objects)
         logger.debug("Added packs for bulk insert", count=len(pack_objects))

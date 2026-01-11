@@ -2,6 +2,7 @@
 Pack API endpoints.
 """
 
+from typing import cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -48,10 +49,16 @@ class PackDetailResponse(BaseModel):
 
 
 def format_pack_plugins(pack: Pack) -> list[PackPluginResponse]:
-    """Format pack plugins for response."""
+    """Format pack plugins for response.
+
+    Note: This function expects pack.pack_plugins to be eagerly loaded
+    with selectinload to ensure pp.plugin is populated.
+    """
     return [
         PackPluginResponse(
-            plugin=pp.plugin,  # type: ignore[arg-type]
+            # pp.plugin is Plugin (SQLModel), but Pydantic's from_attributes=True
+            # handles conversion to PluginRead. Cast to satisfy type checker.
+            plugin=cast("PluginRead", pp.plugin),
             phase=pp.phase,
             description=pp.description,
             commands_to_run=pp.commands_to_run,
@@ -109,11 +116,15 @@ async def get_pack(
     db: AsyncSession = Depends(get_db),
 ) -> PackDetailResponse:
     """Get a pack by ID with its plugins."""
+    # SQLModel Relationship attributes are not properly typed for selectinload
+    # See: https://github.com/microsoft/pyright/issues/10373
     query = (
         select(Pack)
         .where(col(Pack.id) == pack_id)
         .options(
-            selectinload(Pack.pack_plugins).selectinload(PackPlugin.plugin)  # type: ignore[arg-type]
+            selectinload(Pack.pack_plugins).selectinload(  # pyright: ignore[reportArgumentType]
+                PackPlugin.plugin  # pyright: ignore[reportArgumentType]
+            )
         )
     )
     result = await db.execute(query)
@@ -133,11 +144,15 @@ async def get_pack_by_slug(
     db: AsyncSession = Depends(get_db),
 ) -> PackDetailResponse:
     """Get a pack by slug with its plugins."""
+    # SQLModel Relationship attributes are not properly typed for selectinload
+    # See: https://github.com/microsoft/pyright/issues/10373
     query = (
         select(Pack)
         .where(col(Pack.slug) == slug)
         .options(
-            selectinload(Pack.pack_plugins).selectinload(PackPlugin.plugin)  # type: ignore[arg-type]
+            selectinload(Pack.pack_plugins).selectinload(  # pyright: ignore[reportArgumentType]
+                PackPlugin.plugin  # pyright: ignore[reportArgumentType]
+            )
         )
     )
     result = await db.execute(query)

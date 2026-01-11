@@ -64,6 +64,8 @@ def format_pack_plugins(pack: Pack) -> list[PackPluginResponse]:
             commands_to_run=pp.commands_to_run,
         )
         for pp in sorted(pack.pack_plugins, key=lambda x: (x.phase_order, x.plugin_order))
+        # Defensive check: relationship may be None if not eagerly loaded
+        if pp.plugin is not None  # pyright: ignore[reportUnnecessaryComparison]
     ]
 
 

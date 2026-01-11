@@ -49,6 +49,7 @@ def rate_limit_exceeded_handler(request: Request, exc: Exception) -> Response:
     return Response(
         content=f"Rate limit exceeded: {detail}",
         status_code=429,
+        media_type="text/plain",
         headers={"Retry-After": str(retry_after)} if retry_after else {},
     )
 

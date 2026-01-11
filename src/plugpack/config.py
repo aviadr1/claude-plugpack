@@ -6,6 +6,7 @@ for local development. Production requires explicit configuration.
 """
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, computed_field, model_validator
@@ -31,9 +32,13 @@ class Settings(BaseSettings):
     )
 
     # Database - Required in production, default for dev
+    # Use SQLite for local dev without Docker, PostgreSQL for production
     database_url: str = Field(
-        default="postgresql+asyncpg://plugpack:plugpack_dev_password@localhost:5432/plugpack"
+        default="sqlite+aiosqlite:///./plugpack.db"
     )
+
+    # Set to True to use SQLite even if DATABASE_URL points to PostgreSQL
+    use_sqlite: bool = Field(default=False)
 
     # Redis - Required in production, default for dev
     redis_url: str = Field(default="redis://localhost:6379/0")

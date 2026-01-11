@@ -6,21 +6,36 @@ Uses SQLModel (SQLAlchemy + Pydantic) for async database operations.
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel
 
 from plugpack.config import settings
 
+# Determine if using SQLite (doesn't support connection pooling)
+_is_sqlite = settings.database_url.startswith("sqlite")
+
+# Engine configuration differs for SQLite vs PostgreSQL
+_engine_kwargs: dict[str, Any] = {
+    "echo": settings.app_debug,
+    "future": True,
+}
+
+if _is_sqlite:
+    # SQLite: use NullPool, enable check_same_thread=False for async
+    from sqlalchemy.pool import StaticPool
+
+    _engine_kwargs["poolclass"] = StaticPool
+    _engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    # PostgreSQL: use connection pooling
+    _engine_kwargs["pool_pre_ping"] = True
+    _engine_kwargs["pool_size"] = 5
+    _engine_kwargs["max_overflow"] = 10
+
 # Create async engine
-engine = create_async_engine(
-    settings.database_url,
-    echo=settings.app_debug,
-    future=True,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10,
-)
+engine = create_async_engine(settings.database_url, **_engine_kwargs)
 
 # Create async session factory
 async_session_maker = async_sessionmaker(

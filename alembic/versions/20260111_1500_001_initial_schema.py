@@ -123,6 +123,8 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["pack_id"], ["packs.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["plugin_id"], ["plugins.id"], ondelete="CASCADE"),
     )
+    op.create_index("ix_pack_plugins_pack_id", "pack_plugins", ["pack_id"])
+    op.create_index("ix_pack_plugins_plugin_id", "pack_plugins", ["plugin_id"])
 
     # Reviews table
     op.create_table(
@@ -152,10 +154,18 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["pack_id"], ["packs.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="SET NULL"),
     )
+    op.create_index("ix_reviews_plugin_id", "reviews", ["plugin_id"])
+    op.create_index("ix_reviews_pack_id", "reviews", ["pack_id"])
+    op.create_index("ix_reviews_user_id", "reviews", ["user_id"])
 
 
 def downgrade() -> None:
+    op.drop_index("ix_reviews_user_id", table_name="reviews")
+    op.drop_index("ix_reviews_pack_id", table_name="reviews")
+    op.drop_index("ix_reviews_plugin_id", table_name="reviews")
     op.drop_table("reviews")
+    op.drop_index("ix_pack_plugins_plugin_id", table_name="pack_plugins")
+    op.drop_index("ix_pack_plugins_pack_id", table_name="pack_plugins")
     op.drop_table("pack_plugins")
     op.drop_table("packs")
     op.drop_index("ix_plugins_category", table_name="plugins")

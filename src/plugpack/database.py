@@ -23,7 +23,7 @@ _engine_kwargs: dict[str, Any] = {
 }
 
 if _is_sqlite:
-    # SQLite: use NullPool, enable check_same_thread=False for async
+    # SQLite: use StaticPool for single connection, check_same_thread=False for async
     from sqlalchemy.pool import StaticPool
 
     _engine_kwargs["poolclass"] = StaticPool

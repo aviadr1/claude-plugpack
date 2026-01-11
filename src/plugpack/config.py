@@ -36,9 +36,6 @@ class Settings(BaseSettings):
         default="sqlite+aiosqlite:///./plugpack.db"
     )
 
-    # Set to True to use SQLite even if DATABASE_URL points to PostgreSQL
-    use_sqlite: bool = Field(default=False)
-
     # Redis - Required in production, default for dev
     redis_url: str = Field(default="redis://localhost:6379/0")
 

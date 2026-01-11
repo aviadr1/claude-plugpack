@@ -8,7 +8,7 @@ SQLModel combines SQLAlchemy and Pydantic, giving us:
 """
 
 from datetime import UTC, datetime
-from typing import Annotated, Optional
+from typing import Annotated, ClassVar, Optional
 from uuid import UUID, uuid4
 
 from pydantic import field_validator
@@ -87,7 +87,7 @@ class PluginBase(SQLModel):
 class Plugin(PluginBase, TimestampMixin, table=True):
     """Plugin database model."""
 
-    __tablename__ = "plugins"
+    __tablename__: ClassVar[str] = "plugins"  # type: ignore[assignment]
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
@@ -177,7 +177,7 @@ class PackBase(SQLModel):
 class Pack(PackBase, TimestampMixin, table=True):
     """Pack database model."""
 
-    __tablename__ = "packs"
+    __tablename__: ClassVar[str] = "packs"  # type: ignore[assignment]
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
@@ -189,7 +189,7 @@ class Pack(PackBase, TimestampMixin, table=True):
 class PackPlugin(TimestampMixin, table=True):
     """Many-to-many relationship between Packs and Plugins."""
 
-    __tablename__ = "pack_plugins"
+    __tablename__: ClassVar[str] = "pack_plugins"  # type: ignore[assignment]
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     pack_id: UUID = Field(foreign_key="packs.id")
@@ -235,7 +235,7 @@ class ReviewBase(SQLModel):
 class Review(ReviewBase, TimestampMixin, table=True):
     """Review database model."""
 
-    __tablename__ = "reviews"
+    __tablename__: ClassVar[str] = "reviews"  # type: ignore[assignment]
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
@@ -282,7 +282,7 @@ class UserBase(SQLModel):
 class User(UserBase, TimestampMixin, table=True):
     """User database model."""
 
-    __tablename__ = "users"
+    __tablename__: ClassVar[str] = "users"  # type: ignore[assignment]
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 

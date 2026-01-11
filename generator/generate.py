@@ -41,7 +41,7 @@ def load_plugins() -> list[dict]:
         print(f"Warning: {DATA_FILE} not found. Run 'make scrape' first.")
         return []
 
-    with open(DATA_FILE) as f:
+    with DATA_FILE.open() as f:
         plugins = json.load(f)
 
     print(f"Loaded {len(plugins)} plugins from {DATA_FILE}")
@@ -71,7 +71,7 @@ def render_template(env: Environment, template_name: str, context: dict, output_
     html = template.render(**context)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "w") as f:
+    with output_path.open("w") as f:
         f.write(html)
 
     print(f"  Generated: {output_path.relative_to(PROJECT_ROOT)}")
@@ -163,7 +163,8 @@ def generate_data_files(plugins: list[dict]):
     data_dir.mkdir(parents=True, exist_ok=True)
 
     # Full plugins data
-    with open(data_dir / "plugins.json", "w") as f:
+    plugins_file = data_dir / "plugins.json"
+    with plugins_file.open("w") as f:
         json.dump(plugins, f, indent=2)
     print("  Generated: docs/data/plugins.json")
 
@@ -180,7 +181,8 @@ def generate_data_files(plugins: list[dict]):
         }
         for p in plugins
     ]
-    with open(data_dir / "search-index.json", "w") as f:
+    search_file = data_dir / "search-index.json"
+    with search_file.open("w") as f:
         json.dump(search_data, f)
     print("  Generated: docs/data/search-index.json")
 
@@ -230,10 +232,6 @@ def generate_site():
     # Copy static assets
     print("\nCopying assets...")
     copy_static_assets()
-
-    # Generate CNAME for custom domain (optional)
-    # with open(OUTPUT_DIR / "CNAME", "w") as f:
-    #     f.write("plugpack.dev")
 
     # Generate .nojekyll for GitHub Pages
     (OUTPUT_DIR / ".nojekyll").touch()

@@ -13,19 +13,14 @@ Usage:
 
 import json
 import re
-
-# Import from the plugin analyzer
-import sys
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from skills.plugin_analyzer.analyzer import (
     PluginAnalysis,
-    analyze_plugin,
+    _analyze_plugin_path,
     clone_plugin,
     find_files,
 )
@@ -125,9 +120,8 @@ def check_security(plugin_path: Path) -> SecurityCheck:
                         security.score -= 5
 
             for pattern, message in safe_patterns:
-                if re.search(pattern, content, re.IGNORECASE):
-                    if message not in security.passes:
-                        security.passes.append(message)
+                if re.search(pattern, content, re.IGNORECASE) and message not in security.passes:
+                    security.passes.append(message)
         except UnicodeDecodeError:
             pass
 
@@ -419,17 +413,24 @@ def generate_quality_report(plugin_url_or_path: str) -> QualityReport:
 
     # Get plugin path
     if plugin_url_or_path.startswith("http"):
-        plugin_path = clone_plugin(plugin_url_or_path)
+        # Use context manager to clone once and clean up after
+        with clone_plugin(plugin_url_or_path) as plugin_path:
+            return _generate_report_for_path(plugin_path, plugin_url_or_path)
     else:
+        # Local path - no cleanup needed
         plugin_path = Path(plugin_url_or_path)
+        return _generate_report_for_path(plugin_path, "")
 
-    # Run plugin analysis first
-    analysis = analyze_plugin(plugin_url_or_path)
+
+def _generate_report_for_path(plugin_path: Path, repo_url: str) -> QualityReport:
+    """Internal function to generate report for a plugin at a given path."""
+    # Run plugin analysis (reusing the path, no second clone)
+    analysis = _analyze_plugin_path(plugin_path, repo_url)
 
     # Create report
     report = QualityReport(
         plugin_name=analysis.name,
-        plugin_url=plugin_url_or_path,
+        plugin_url=repo_url or str(plugin_path),
         generated_at=datetime.now(UTC).isoformat(),
     )
 

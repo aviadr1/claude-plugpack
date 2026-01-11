@@ -11,8 +11,8 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import col, select
 
 from plugpack.config import settings
 from plugpack.database import get_db
@@ -70,11 +70,11 @@ async def search_database(
     plugin_query = (
         select(Plugin)
         .where(
-            (Plugin.name.ilike(search_pattern))
-            | (Plugin.description.ilike(search_pattern))
-            | (Plugin.keywords.ilike(search_pattern))
+            col(Plugin.name).ilike(search_pattern)
+            | col(Plugin.description).ilike(search_pattern)
+            | col(Plugin.keywords).ilike(search_pattern)
         )
-        .order_by(Plugin.github_stars.desc())
+        .order_by(col(Plugin.github_stars).desc())
         .limit(limit)
     )
     plugin_result = await db.execute(plugin_query)
@@ -84,12 +84,12 @@ async def search_database(
     pack_query = (
         select(Pack)
         .where(
-            Pack.is_published.is_(True),
-            (Pack.name.ilike(search_pattern))
-            | (Pack.description.ilike(search_pattern))
-            | (Pack.tags.ilike(search_pattern)),
+            col(Pack.is_published).is_(True),
+            col(Pack.name).ilike(search_pattern)
+            | col(Pack.description).ilike(search_pattern)
+            | col(Pack.tags).ilike(search_pattern),
         )
-        .order_by(Pack.install_count.desc())
+        .order_by(col(Pack.install_count).desc())
         .limit(limit)
     )
     pack_result = await db.execute(pack_query)
@@ -127,8 +127,12 @@ def _sync_meilisearch_search(query: str, limit: int) -> dict[str, Any] | None:
         ]
     )
 
-    plugins = results["results"][0]["hits"] if len(results["results"]) > 0 else []
-    packs = results["results"][1]["hits"] if len(results["results"]) > 1 else []
+    plugins: list[dict[str, Any]] = (
+        results["results"][0]["hits"] if len(results["results"]) > 0 else []
+    )
+    packs: list[dict[str, Any]] = (
+        results["results"][1]["hits"] if len(results["results"]) > 1 else []
+    )
 
     return {
         "query": query,
@@ -213,9 +217,9 @@ async def suggest(
 
     # Get plugin name suggestions
     query = (
-        select(Plugin.name)
-        .where(Plugin.name.ilike(search_pattern))
-        .order_by(Plugin.github_stars.desc())
+        select(col(Plugin.name))
+        .where(col(Plugin.name).ilike(search_pattern))
+        .order_by(col(Plugin.github_stars).desc())
         .limit(limit)
     )
     result = await db.execute(query)

@@ -15,8 +15,11 @@ Usage:
 
 import json
 import re
+import shutil
 import subprocess
 import tempfile
+from collections.abc import Generator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -131,37 +134,54 @@ def find_files(directory: Path, pattern: str) -> list[Path]:
     return list(directory.glob(pattern))
 
 
-def clone_plugin(repo_url: str) -> Path:
-    """Clone a GitHub repository to a temporary directory."""
+@contextmanager
+def clone_plugin(repo_url: str) -> Generator[Path, None, None]:
+    """Clone a GitHub repository to a temporary directory.
+
+    Uses a context manager to ensure cleanup of temp directories.
+
+    Usage:
+        with clone_plugin(url) as plugin_path:
+            # work with plugin_path
+        # temp dir automatically cleaned up
+    """
     tmpdir = tempfile.mkdtemp(prefix="plugin-analyzer-")
+    try:
+        # Handle tree URLs (e.g., .../tree/main/plugins/name)
+        if "/tree/" in repo_url:
+            parts = repo_url.split("/tree/")
+            base_url = parts[0]
+            path_parts = parts[1].split("/", 1)
+            branch = path_parts[0]
+            subpath = path_parts[1] if len(path_parts) > 1 else ""
 
-    # Handle tree URLs (e.g., .../tree/main/plugins/name)
-    if "/tree/" in repo_url:
-        parts = repo_url.split("/tree/")
-        base_url = parts[0]
-        path_parts = parts[1].split("/", 1)
-        branch = path_parts[0]
-        subpath = path_parts[1] if len(path_parts) > 1 else ""
+            # Clone the whole repo
+            result = subprocess.run(
+                ["git", "clone", "--depth", "1", "-b", branch, base_url, tmpdir],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f"Git clone failed: {result.stderr}")
 
-        # Clone the whole repo
-        subprocess.run(
-            ["git", "clone", "--depth", "1", "-b", branch, base_url, tmpdir],
-            capture_output=True,
-            check=True,
-        )
-
-        # Return the subpath
-        if subpath:
-            return Path(tmpdir) / subpath
-        return Path(tmpdir)
-
-    # Simple clone
-    subprocess.run(
-        ["git", "clone", "--depth", "1", repo_url, tmpdir],
-        capture_output=True,
-        check=True,
-    )
-    return Path(tmpdir)
+            # Return the subpath
+            if subpath:
+                yield Path(tmpdir) / subpath
+            else:
+                yield Path(tmpdir)
+        else:
+            # Simple clone
+            result = subprocess.run(
+                ["git", "clone", "--depth", "1", repo_url, tmpdir],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f"Git clone failed: {result.stderr}")
+            yield Path(tmpdir)
+    finally:
+        # Always clean up temp directory
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 def parse_plugin_json(plugin_path: Path) -> dict[str, Any]:
@@ -376,12 +396,17 @@ def analyze_plugin(plugin_url_or_path: str) -> PluginAnalysis:
 
     # 1. Get plugin location
     if plugin_url_or_path.startswith("http"):
-        plugin_path = clone_plugin(plugin_url_or_path)
-        repo_url = plugin_url_or_path
+        # Use context manager for remote repos to ensure cleanup
+        with clone_plugin(plugin_url_or_path) as plugin_path:
+            return _analyze_plugin_path(plugin_path, repo_url=plugin_url_or_path)
     else:
+        # Local path - no cleanup needed
         plugin_path = Path(plugin_url_or_path)
-        repo_url = ""
+        return _analyze_plugin_path(plugin_path, repo_url="")
 
+
+def _analyze_plugin_path(plugin_path: Path, repo_url: str) -> PluginAnalysis:
+    """Internal function to analyze a plugin at a given path."""
     # 2. Parse plugin.json
     plugin_json = parse_plugin_json(plugin_path)
 

@@ -74,3 +74,58 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  notify-failure:
+    name: Notify on Failure
+    needs: [build, deploy]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Create failure issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const runId = context.runId;
+            const workflowName = context.workflow;
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+
+            // Check if there's already an open issue for this workflow
+            const issues = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              labels: 'ci-failure',
+            });
+
+            const existingIssue = issues.data.find(issue =>
+              issue.title.includes(workflowName)
+            );
+
+            if (existingIssue) {
+              // Add a comment to the existing issue
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: existingIssue.number,
+                body: `Workflow failed again.\n\n**Run:** ${runUrl}\n**Time:** ${new Date().toISOString()}`,
+              });
+            } else {
+              // Create a new issue
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title: `${workflowName} workflow failed`,
+                body: [
+                  `The scheduled **${workflowName}** workflow has failed.`,
+                  '',
+                  `**Run:** ${runUrl}`,
+                  '',
+                  'Please review the logs and take appropriate action.',
+                ].join('\n'),
+                labels: ['ci-failure'],
+              });
+            }

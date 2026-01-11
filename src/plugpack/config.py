@@ -32,9 +32,7 @@ class Settings(BaseSettings):
 
     # Database - Required in production, default for dev
     # Use SQLite for local dev without Docker, PostgreSQL for production
-    database_url: str = Field(
-        default="sqlite+aiosqlite:///./plugpack.db"
-    )
+    database_url: str = Field(default="sqlite+aiosqlite:///./plugpack.db")
 
     # Redis - Required in production, default for dev
     redis_url: str = Field(default="redis://localhost:6379/0")

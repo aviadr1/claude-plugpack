@@ -272,7 +272,7 @@ def detect_requirements(plugin_path: Path, components: PluginComponents) -> Plug
                         if match and match.group() not in requirements.api_keys:
                             requirements.api_keys.append(match.group())
             except UnicodeDecodeError:
-                pass
+                pass  # Skip binary files that can't be decoded
 
     # Estimate Claude plan based on agent count
     if components.agents > 5:
@@ -330,7 +330,7 @@ def check_github_quality(repo_url: str) -> PluginQuality:
                 quality.maintenance_status = "stale"
 
     except Exception:
-        pass
+        pass  # Gracefully handle network errors, rate limits, or API issues
 
     return quality
 

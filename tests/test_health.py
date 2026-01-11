@@ -7,6 +7,8 @@ These tests verify that the application is running and responding correctly.
 import pytest
 from httpx import AsyncClient
 
+from plugpack import __version__
+
 
 @pytest.mark.asyncio
 async def test_health_check(client: AsyncClient) -> None:
@@ -16,6 +18,7 @@ async def test_health_check(client: AsyncClient) -> None:
     data = response.json()
     assert data["status"] == "healthy"
     assert "version" in data
+    assert data["version"] == __version__
 
 
 @pytest.mark.asyncio
@@ -25,6 +28,8 @@ async def test_api_health_check(client: AsyncClient) -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
+    assert "version" in data
+    assert data["version"] == __version__
 
 
 @pytest.mark.asyncio

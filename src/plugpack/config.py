@@ -6,7 +6,6 @@ for local development. Production requires explicit configuration.
 """
 
 from functools import lru_cache
-from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, computed_field, model_validator

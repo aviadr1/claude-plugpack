@@ -7,12 +7,12 @@ The Ultimate Directory for Claude Code Extensions.
 import re
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import FastAPI, Request
 from fastapi import Path as PathParam
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -94,7 +94,7 @@ SlugParam = Annotated[
 
 
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request) -> Any:
+async def home(request: Request) -> Response:
     """Homepage with featured plugins and packs."""
     return templates.TemplateResponse(
         request,
@@ -107,7 +107,7 @@ async def home(request: Request) -> Any:
 
 
 @app.get("/plugins", response_class=HTMLResponse)
-async def plugins_list(request: Request) -> Any:
+async def plugins_list(request: Request) -> Response:
     """Plugin listing page."""
     return templates.TemplateResponse(
         request,
@@ -117,7 +117,7 @@ async def plugins_list(request: Request) -> Any:
 
 
 @app.get("/plugins/{slug}", response_class=HTMLResponse)
-async def plugin_detail(request: Request, slug: SlugParam) -> Any:
+async def plugin_detail(request: Request, slug: SlugParam) -> Response:
     """Plugin detail page."""
     safe_slug = validate_slug(slug)
     return templates.TemplateResponse(
@@ -128,7 +128,7 @@ async def plugin_detail(request: Request, slug: SlugParam) -> Any:
 
 
 @app.get("/packs", response_class=HTMLResponse)
-async def packs_list(request: Request) -> Any:
+async def packs_list(request: Request) -> Response:
     """Pack listing page."""
     return templates.TemplateResponse(
         request,
@@ -138,7 +138,7 @@ async def packs_list(request: Request) -> Any:
 
 
 @app.get("/packs/{slug}", response_class=HTMLResponse)
-async def pack_detail(request: Request, slug: SlugParam) -> Any:
+async def pack_detail(request: Request, slug: SlugParam) -> Response:
     """Pack detail page."""
     safe_slug = validate_slug(slug)
     return templates.TemplateResponse(
@@ -149,7 +149,7 @@ async def pack_detail(request: Request, slug: SlugParam) -> Any:
 
 
 @app.get("/search", response_class=HTMLResponse)
-async def search_page(request: Request, q: str = "") -> Any:
+async def search_page(request: Request, q: str = "") -> Response:
     """Search results page."""
     # Sanitize search query for display
     safe_query = q[:200] if len(q) > 200 else q

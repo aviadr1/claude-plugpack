@@ -12,39 +12,32 @@ dependencies = [
     # Web Framework
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.34.0",
-
     # Database
     "sqlmodel>=0.0.22",
     "asyncpg>=0.30.0",
     "alembic>=1.14.0",
     "greenlet>=3.1.0",
-
     # Redis
     "redis>=5.2.0",
-
     # Search
     "meilisearch>=0.31.0",
-
     # HTTP Client (for scraping)
     "httpx>=0.28.0",
-
     # Templates
     "jinja2>=3.1.0",
-
     # Validation & Settings
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
-
     # Auth (GitHub OAuth)
     "authlib>=1.3.0",
     "itsdangerous>=2.2.0",
     "python-multipart>=0.0.20",
-
     # Utilities
     "python-dotenv>=1.0.0",
     "structlog>=24.4.0",
     "tenacity>=9.0.0",
     "click>=8.1.0",
+    "slowapi>=0.1.9",
 ]
 
 [project.optional-dependencies]

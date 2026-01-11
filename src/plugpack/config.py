@@ -48,9 +48,7 @@ class Settings(BaseSettings):
     github_token: str = ""
 
     # CORS
-    cors_origins: list[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8000"]
-    )
+    cors_origins: list[str] = Field(default=["http://localhost:3000", "http://localhost:8000"])
 
     @model_validator(mode="after")
     def validate_production_settings(self) -> "Settings":
@@ -58,17 +56,11 @@ class Settings(BaseSettings):
         if self.app_env == "production":
             # Check for dev defaults that shouldn't be in production
             if "dev-secret-key" in self.app_secret_key:
-                raise ValueError(
-                    "APP_SECRET_KEY must be set to a secure value in production"
-                )
+                raise ValueError("APP_SECRET_KEY must be set to a secure value in production")
             if "plugpack_dev_password" in self.database_url:
-                raise ValueError(
-                    "DATABASE_URL must be set to production database in production"
-                )
+                raise ValueError("DATABASE_URL must be set to production database in production")
             if self.meilisearch_api_key == "plugpack_meili_dev_key":
-                raise ValueError(
-                    "MEILISEARCH_API_KEY must be set to production key in production"
-                )
+                raise ValueError("MEILISEARCH_API_KEY must be set to production key in production")
         return self
 
     @computed_field  # type: ignore[prop-decorator]

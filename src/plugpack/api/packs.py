@@ -2,17 +2,67 @@
 Pack API endpoints.
 """
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from plugpack.database import get_db
-from plugpack.models import Pack, PackPlugin
+from plugpack.models import Pack, PackPlugin, PluginRead
 
 router = APIRouter()
+
+
+# =============================================================================
+# Response Models
+# =============================================================================
+
+
+class PackPluginResponse(BaseModel):
+    """Response model for a plugin within a pack."""
+
+    plugin: PluginRead
+    phase: str
+    description: str
+    commands_to_run: str
+
+    model_config = {"from_attributes": True}
+
+
+class PackDetailResponse(BaseModel):
+    """Response model for pack detail with plugins."""
+
+    pack: Pack
+    plugins: list[PackPluginResponse]
+
+    model_config = {"from_attributes": True}
+
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+
+
+def format_pack_plugins(pack: Pack) -> list[dict[str, Any]]:
+    """Format pack plugins for response."""
+    return [
+        {
+            "plugin": pp.plugin,
+            "phase": pp.phase,
+            "description": pp.description,
+            "commands_to_run": pp.commands_to_run,
+        }
+        for pp in sorted(pack.pack_plugins, key=lambda x: (x.phase_order, x.plugin_order))
+    ]
+
+
+# =============================================================================
+# API Endpoints
+# =============================================================================
 
 
 @router.get("/")
@@ -57,7 +107,7 @@ async def count_packs(
 async def get_pack(
     pack_id: UUID,
     db: AsyncSession = Depends(get_db),
-) -> dict:
+) -> PackDetailResponse:
     """Get a pack by ID with its plugins."""
     query = (
         select(Pack)
@@ -69,29 +119,17 @@ async def get_pack(
     if not pack:
         raise HTTPException(status_code=404, detail="Pack not found")
 
-    # Format response with plugins
-    plugins = []
-    for pp in sorted(pack.pack_plugins, key=lambda x: (x.phase_order, x.plugin_order)):
-        plugins.append(
-            {
-                "plugin": pp.plugin,
-                "phase": pp.phase,
-                "description": pp.description,
-                "commands_to_run": pp.commands_to_run,
-            }
-        )
-
-    return {
-        "pack": pack,
-        "plugins": plugins,
-    }
+    return PackDetailResponse(
+        pack=pack,
+        plugins=format_pack_plugins(pack),
+    )
 
 
 @router.get("/slug/{slug}")
 async def get_pack_by_slug(
     slug: str,
     db: AsyncSession = Depends(get_db),
-) -> dict:
+) -> PackDetailResponse:
     """Get a pack by slug with its plugins."""
     query = (
         select(Pack)
@@ -103,19 +141,7 @@ async def get_pack_by_slug(
     if not pack:
         raise HTTPException(status_code=404, detail="Pack not found")
 
-    # Format response with plugins
-    plugins = []
-    for pp in sorted(pack.pack_plugins, key=lambda x: (x.phase_order, x.plugin_order)):
-        plugins.append(
-            {
-                "plugin": pp.plugin,
-                "phase": pp.phase,
-                "description": pp.description,
-                "commands_to_run": pp.commands_to_run,
-            }
-        )
-
-    return {
-        "pack": pack,
-        "plugins": plugins,
-    }
+    return PackDetailResponse(
+        pack=pack,
+        plugins=format_pack_plugins(pack),
+    )

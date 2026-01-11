@@ -22,7 +22,40 @@ router = APIRouter()
 logger = structlog.get_logger()
 
 # Thread pool for blocking I/O operations
-_executor = ThreadPoolExecutor(max_workers=4)
+_executor: ThreadPoolExecutor | None = None
+
+
+def get_executor() -> ThreadPoolExecutor:
+    """Get or create the thread pool executor."""
+    global _executor
+    if _executor is None:
+        _executor = ThreadPoolExecutor(max_workers=4)
+    return _executor
+
+
+def shutdown_executor() -> None:
+    """Shutdown the thread pool executor."""
+    global _executor
+    if _executor is not None:
+        _executor.shutdown(wait=True)
+        _executor = None
+
+
+# Meilisearch client singleton
+_meili_client: Any = None
+
+
+def get_meili_client() -> Any:
+    """Get or create Meilisearch client singleton."""
+    global _meili_client
+    if _meili_client is None:
+        try:
+            from meilisearch import Client
+
+            _meili_client = Client(settings.meilisearch_url, settings.meilisearch_api_key)
+        except ImportError:
+            return None
+    return _meili_client
 
 
 async def search_database(
@@ -72,11 +105,11 @@ async def search_database(
     }
 
 
-def _sync_meilisearch_search(query: str, limit: int) -> dict[str, Any]:
+def _sync_meilisearch_search(query: str, limit: int) -> dict[str, Any] | None:
     """Synchronous Meilisearch search (runs in thread pool)."""
-    from meilisearch import Client
-
-    client = Client(settings.meilisearch_url, settings.meilisearch_api_key)
+    client = get_meili_client()
+    if client is None:
+        return None
 
     # Multi-index search
     results = client.multi_search(
@@ -113,10 +146,8 @@ async def search_meilisearch(
 ) -> dict[str, Any] | None:
     """Search using Meilisearch (runs sync client in thread pool)."""
     try:
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(
-            _executor, _sync_meilisearch_search, query, limit
-        )
+        # Use asyncio.to_thread for cleaner async execution (Python 3.9+)
+        result = await asyncio.to_thread(_sync_meilisearch_search, query, limit)
         return result
     except ImportError:
         logger.warning("Meilisearch client not installed")

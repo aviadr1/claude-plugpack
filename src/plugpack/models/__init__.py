@@ -8,10 +8,14 @@ SQLModel combines SQLAlchemy and Pydantic, giving us:
 """
 
 from datetime import UTC, datetime
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID, uuid4
 
+from pydantic import field_validator
 from sqlmodel import Field, Relationship, SQLModel
+
+# Type for validated URLs that get stored as strings
+UrlStr = Annotated[str, Field(max_length=500)]
 
 
 def utc_now() -> datetime:
@@ -54,7 +58,7 @@ class PluginBase(SQLModel):
     author_url: str = Field(default="", max_length=500)
 
     # Metadata
-    category: str = Field(default="other", max_length=50)
+    category: str = Field(default="other", max_length=50, index=True)
     keywords: str = Field(default="")  # Comma-separated
 
     # Statistics from GitHub
@@ -105,13 +109,34 @@ class PluginRead(PluginBase):
 
 
 class PluginCreate(SQLModel):
-    """Plugin creation model."""
+    """Plugin creation model with URL validation."""
 
-    name: str
-    slug: str
-    description: str = ""
-    source_url: str
-    repository_url: str = ""
+    name: str = Field(min_length=1, max_length=100)
+    slug: str = Field(min_length=1, max_length=100)
+    description: str = Field(default="", max_length=1000)
+    source_url: str = Field(max_length=500)
+    repository_url: str = Field(default="", max_length=500)
+
+    @field_validator("slug", mode="before")
+    @classmethod
+    def validate_slug(cls, v: str) -> str:
+        """Validate slug format."""
+        import re
+
+        if not re.match(r"^[a-z0-9-]+$", v):
+            raise ValueError("Slug must contain only lowercase letters, numbers, and hyphens")
+        return v
+
+    @field_validator("source_url", "repository_url", mode="before")
+    @classmethod
+    def validate_url(cls, v: str) -> str:
+        """Validate URL format if provided."""
+        if not v:
+            return v
+        # Basic URL validation - must start with http:// or https://
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("URL must start with http:// or https://")
+        return v
 
 
 # =============================================================================

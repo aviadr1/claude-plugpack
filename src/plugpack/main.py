@@ -15,6 +15,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from plugpack import __version__
 from plugpack.api import router as api_router
@@ -25,6 +28,13 @@ from plugpack.database import close_db, init_db
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
+
+# Rate limiter (uses Redis in production, in-memory for development)
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200/minute"],
+    storage_uri=settings.redis_url if settings.is_production else None,
+)
 
 # Slug validation pattern
 SLUG_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$")
@@ -49,6 +59,10 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
+    # Clean up thread pool executor used by search
+    from plugpack.api.search import shutdown_executor
+
+    shutdown_executor()
     await close_db()
 
 
@@ -62,13 +76,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add CORS middleware
+# Add rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Add CORS middleware with restricted headers
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
 
 # Mount static files
@@ -83,9 +101,7 @@ app.include_router(api_router, prefix="/api")
 
 
 # Type alias for validated slug
-SlugParam = Annotated[
-    str, PathParam(min_length=1, max_length=100, pattern=r"^[a-z0-9-]+$")
-]
+SlugParam = Annotated[str, PathParam(min_length=1, max_length=100, pattern=r"^[a-z0-9-]+$")]
 
 
 # =============================================================================

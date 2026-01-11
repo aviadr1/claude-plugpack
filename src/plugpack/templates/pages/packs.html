@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Curated Plugin Packs</h1>
+    <p class="text-gray-600">
+        Pre-tested plugin combinations for common workflows. Each pack includes step-by-step setup guides.
+    </p>
+</div>
+
+<!-- Pack Grid -->
+<div
+    class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+    hx-get="/api/packs?limit=12"
+    hx-trigger="load"
+    hx-swap="innerHTML"
+>
+    <!-- Loading skeleton -->
+    {% for i in range(6) %}
+    <div class="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+        <div class="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+        <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+        <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

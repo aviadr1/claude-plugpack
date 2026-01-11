@@ -107,37 +107,48 @@ def check_security(plugin_path: Path) -> SecurityCheck:
         (r"try\s*:|except\s*:", "Has error handling"),
     ]
 
+    # Track files that have already been penalized for each pattern to avoid excessive deductions
+    penalized_files: dict[str, set[str]] = {"issue": set(), "warning": set()}
+
     for file in find_files(plugin_path, "**/*.py"):
         try:
             content = file.read_text()
             for pattern, message, severity in dangerous_patterns:
                 if re.search(pattern, content, re.IGNORECASE):
-                    if severity == "issue":
-                        security.issues.append(f"{file.name}: {message}")
-                        security.score -= 20
-                    else:
-                        security.warnings.append(f"{file.name}: {message}")
-                        security.score -= 5
+                    # Only penalize score once per file per severity level
+                    file_key = f"{file.name}:{message}"
+                    if file_key not in penalized_files[severity]:
+                        penalized_files[severity].add(file_key)
+                        if severity == "issue":
+                            security.issues.append(f"{file.name}: {message}")
+                            security.score -= 20
+                        else:
+                            security.warnings.append(f"{file.name}: {message}")
+                            security.score -= 5
 
             for pattern, message in safe_patterns:
                 if re.search(pattern, content, re.IGNORECASE) and message not in security.passes:
                     security.passes.append(message)
         except UnicodeDecodeError:
-            pass
+            pass  # Skip binary files that can't be decoded
 
     for file in find_files(plugin_path, "**/*.js"):
         try:
             content = file.read_text()
             for pattern, message, severity in dangerous_patterns:
                 if re.search(pattern, content, re.IGNORECASE):
-                    if severity == "issue":
-                        security.issues.append(f"{file.name}: {message}")
-                        security.score -= 20
-                    else:
-                        security.warnings.append(f"{file.name}: {message}")
-                        security.score -= 5
+                    # Only penalize score once per file per severity level
+                    file_key = f"{file.name}:{message}"
+                    if file_key not in penalized_files[severity]:
+                        penalized_files[severity].add(file_key)
+                        if severity == "issue":
+                            security.issues.append(f"{file.name}: {message}")
+                            security.score -= 20
+                        else:
+                            security.warnings.append(f"{file.name}: {message}")
+                            security.score -= 5
         except UnicodeDecodeError:
-            pass
+            pass  # Skip binary files that can't be decoded
 
     # Check for hardcoded secrets
     secret_patterns = [
@@ -157,7 +168,7 @@ def check_security(plugin_path: Path) -> SecurityCheck:
                         security.score -= 30
                         break
             except UnicodeDecodeError:
-                pass
+                pass  # Skip binary files that can't be decoded
 
     # Ensure score is within bounds
     security.score = max(0, min(100, security.score))
@@ -200,7 +211,7 @@ def check_maintenance(analysis: PluginAnalysis) -> MaintenanceCheck:
                 else:
                     maintenance.commit_frequency = "Infrequent (3+ months)"
             except ValueError:
-                pass
+                pass  # Ignore invalid or unexpected last_commit date formats
 
     return maintenance
 
@@ -286,12 +297,18 @@ def check_testing(plugin_path: Path) -> TestingCheck:
             testing.test_framework = framework
             break
 
-    # Check for test files
-    test_files = list(plugin_path.glob("**/test_*.py")) + list(plugin_path.glob("**/*_test.py"))
-    test_files += list(plugin_path.glob("**/*.test.js")) + list(plugin_path.glob("**/*.spec.js"))
-
-    if test_files:
-        testing.has_tests = True
+    # Check for test files only if no test directories were found
+    if not testing.has_tests:
+        test_file_patterns = [
+            "**/test_*.py",
+            "**/*_test.py",
+            "**/*.test.js",
+            "**/*.spec.js",
+        ]
+        for pattern in test_file_patterns:
+            if any(plugin_path.glob(pattern)):
+                testing.has_tests = True
+                break
 
     # Check for CI
     ci_configs = [

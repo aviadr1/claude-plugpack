@@ -147,3 +147,8 @@ exclude_lines = [
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
 ]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+]

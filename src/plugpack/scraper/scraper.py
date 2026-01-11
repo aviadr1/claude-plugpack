@@ -5,7 +5,7 @@ Fetches plugin data from various sources and enriches it with GitHub metadata.
 """
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -170,7 +170,7 @@ class PluginScraper:
                 "keywords": ",".join(keywords),
                 "is_verified": source.is_official,
                 "scraped_from": source.name,
-                "scraped_at": datetime.utcnow().isoformat(),
+                "scraped_at": datetime.now(UTC).isoformat(),
             }
 
         except Exception as e:

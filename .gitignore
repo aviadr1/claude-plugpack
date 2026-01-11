@@ -113,3 +113,4 @@ docs/
 *.tmp
 *.temp
 .cache/
+scraped_plugins.json

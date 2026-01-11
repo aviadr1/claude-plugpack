@@ -7,7 +7,7 @@
 # of these commands to develop, test, and deploy the application.
 # ============================================================================
 
-.PHONY: help install dev test lint format typecheck check docker-up docker-down docker-logs db-migrate db-seed clean deploy deploy-logs deploy-status deploy-run deploy-migrate deploy-seed deploy-shell deploy-env deploy-env-set docker-build docker-run-local
+.PHONY: help install dev test lint format typecheck check docker-up docker-down docker-logs db-migrate db-seed clean deploy deploy-logs deploy-status deploy-run deploy-migrate deploy-seed deploy-shell deploy-env deploy-env-set docker-build docker-run-local generate-site serve-static analyze-plugin quality-report
 
 # Use uv for package management
 UV := uv
@@ -144,6 +144,23 @@ scrape: ## Run the plugin scraper
 
 scrape-test: ## Test scraper on a single source
 	$(UV) run python -m plugpack.scraper.test
+
+# =============================================================================
+# Static Site Generator
+# =============================================================================
+
+generate-site: ## Generate static site from scraped plugins
+	$(UV) run python -m generator.generate
+
+serve-static: ## Serve static site locally for preview
+	@echo "$(GREEN)Serving static site at http://localhost:8080$(NC)"
+	python -m http.server -d docs 8080
+
+analyze-plugin: ## Analyze a plugin (usage: make analyze-plugin url=https://github.com/user/plugin)
+	$(UV) run python -m skills.plugin_analyzer.analyzer $(url)
+
+quality-report: ## Generate quality report (usage: make quality-report url=https://github.com/user/plugin)
+	$(UV) run python -m generator.quality_report $(url)
 
 # =============================================================================
 # Utilities

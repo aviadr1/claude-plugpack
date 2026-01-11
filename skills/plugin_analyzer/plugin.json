@@ -1,0 +1,16 @@
+{
+  "name": "plugin-analyzer",
+  "version": "1.0.0",
+  "description": "Analyze Claude Code plugins to extract metadata, assess quality, and identify requirements before installation",
+  "author": {
+    "name": "PlugPack",
+    "url": "https://github.com/aviadr1/claude-plugpack"
+  },
+  "commands": [
+    {
+      "name": "analyze-plugin",
+      "description": "Analyze a Claude Code plugin from GitHub URL or local path"
+    }
+  ],
+  "keywords": ["plugin", "analyzer", "quality", "metadata", "claude-code"]
+}

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="text-center py-12 mb-12">
+    <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+        Find the perfect Claude Code plugins
+        <span class="text-claude-600">in 5 minutes, not 5 hours</span>
+    </h1>
+    <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+        The community-powered directory for Claude Code extensions.
+        Browse curated packs, read real reviews, and discover plugins that actually work together.
+    </p>
+
+    <!-- Search -->
+    <form action="/search" method="get" class="max-w-2xl mx-auto">
+        <div class="flex gap-2">
+            <input
+                type="text"
+                name="q"
+                placeholder="What are you trying to build?"
+                class="flex-1 px-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-claude-500 focus:border-claude-500"
+            >
+            <button type="submit" class="px-6 py-3 bg-claude-600 text-white font-medium rounded-lg hover:bg-claude-700 transition-colors">
+                Search
+            </button>
+        </div>
+    </form>
+
+    <!-- Quick Links -->
+    <div class="flex justify-center gap-4 mt-6 text-sm">
+        <a href="/plugins?category=devops" class="text-claude-600 hover:underline">DevOps</a>
+        <a href="/plugins?category=testing" class="text-claude-600 hover:underline">Testing</a>
+        <a href="/plugins?category=frontend" class="text-claude-600 hover:underline">Frontend</a>
+        <a href="/plugins?category=security" class="text-claude-600 hover:underline">Security</a>
+        <a href="/plugins?category=ai" class="text-claude-600 hover:underline">AI/ML</a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12">
+    <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+        <div class="text-3xl font-bold text-claude-600" hx-get="/api/plugins/count" hx-trigger="load" hx-swap="innerHTML">
+            0
+        </div>
+        <div class="text-sm text-gray-600">Plugins</div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+        <div class="text-3xl font-bold text-claude-600" hx-get="/api/packs/count" hx-trigger="load" hx-swap="innerHTML">
+            0
+        </div>
+        <div class="text-sm text-gray-600">Curated Packs</div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+        <div class="text-3xl font-bold text-claude-600">20+</div>
+        <div class="text-sm text-gray-600">Categories</div>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+        <div class="text-3xl font-bold text-claude-600">5min</div>
+        <div class="text-sm text-gray-600">Avg. Setup Time</div>
+    </div>
+</div>
+
+<!-- Featured Packs -->
+<section class="mb-12">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">Featured Packs</h2>
+        <a href="/packs" class="text-claude-600 hover:underline">View all →</a>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" hx-get="/api/packs?featured=true&limit=6" hx-trigger="load" hx-swap="innerHTML">
+        <!-- Loading skeleton -->
+        <div class="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+            <div class="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+            <div class="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+            <div class="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Plugins -->
+<section class="mb-12">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">Popular Plugins</h2>
+        <a href="/plugins" class="text-claude-600 hover:underline">View all →</a>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4" hx-get="/api/plugins?featured=true&limit=8" hx-trigger="load" hx-swap="innerHTML">
+        <!-- Loading skeleton -->
+        {% for i in range(4) %}
+        <div class="bg-white rounded-lg shadow-sm p-4 animate-pulse">
+            <div class="h-5 bg-gray-200 rounded w-2/3 mb-3"></div>
+            <div class="h-3 bg-gray-200 rounded w-full mb-1"></div>
+            <div class="h-3 bg-gray-200 rounded w-3/4"></div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="bg-white rounded-lg shadow-sm p-8">
+    <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">How It Works</h2>
+    <div class="grid sm:grid-cols-3 gap-8">
+        <div class="text-center">
+            <div class="w-12 h-12 bg-claude-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-2xl">🔍</span>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-2">1. Search & Discover</h3>
+            <p class="text-gray-600 text-sm">
+                Find plugins by use case, not just keywords. Our smart search understands what you're trying to build.
+            </p>
+        </div>
+        <div class="text-center">
+            <div class="w-12 h-12 bg-claude-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-2xl">📦</span>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-2">2. Pick a Pack</h3>
+            <p class="text-gray-600 text-sm">
+                Or browse curated packs - pre-tested plugin combinations for common workflows.
+            </p>
+        </div>
+        <div class="text-center">
+            <div class="w-12 h-12 bg-claude-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-2xl">🚀</span>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-2">3. Install & Build</h3>
+            <p class="text-gray-600 text-sm">
+                One-click install with Claude Code. Start building immediately with plugins that work together.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

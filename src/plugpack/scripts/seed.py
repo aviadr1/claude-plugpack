@@ -35,10 +35,11 @@ async def seed_from_scraper() -> None:
 
     logger.info("Seeding database", plugin_count=len(plugins))
 
+    # Use get_session() context manager which auto-commits on successful exit
     async with get_session() as session:
-        for plugin_data in plugins:
-            # Check if plugin already exists
-            plugin = Plugin(
+        # Create plugin objects for bulk insert
+        plugin_objects = [
+            Plugin(
                 name=plugin_data["name"],
                 slug=plugin_data["slug"],
                 description=plugin_data.get("description", ""),
@@ -56,8 +57,13 @@ async def seed_from_scraper() -> None:
                 is_verified=plugin_data.get("is_verified", False),
                 maintenance_status=plugin_data.get("maintenance_status", "unknown"),
             )
-            session.add(plugin)
-            logger.debug("Added plugin", name=plugin.name)
+            for plugin_data in plugins
+        ]
+        
+        # Bulk insert all plugins
+        session.add_all(plugin_objects)
+        logger.debug("Added plugins for bulk insert", count=len(plugin_objects))
+        # Session will auto-commit when context manager exits
 
     logger.info("Database seeded successfully!")
 
@@ -108,11 +114,15 @@ async def seed_sample_packs() -> None:
         },
     ]
 
+    # Use get_session() context manager which auto-commits on successful exit
     async with get_session() as session:
-        for pack_data in sample_packs:
-            pack = Pack(**pack_data)
-            session.add(pack)
-            logger.debug("Added pack", name=pack.name)
+        # Create pack objects for bulk insert
+        pack_objects = [Pack(**pack_data) for pack_data in sample_packs]
+        
+        # Bulk insert all packs
+        session.add_all(pack_objects)
+        logger.debug("Added packs for bulk insert", count=len(pack_objects))
+        # Session will auto-commit when context manager exits
 
     logger.info("Sample packs seeded!")
 

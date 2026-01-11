@@ -6,7 +6,7 @@ Fetches plugin data from various sources and enriches it with GitHub metadata.
 
 import re
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 import httpx
 import structlog
@@ -98,14 +98,15 @@ class PluginScraper:
         response = await self.http_client.get(source.url)
         response.raise_for_status()
 
-        data = response.json()
-        plugins = []
+        data: Any = response.json()
+        plugins: list[dict[str, Any]] = []
+        raw_plugins: list[dict[str, Any]]
 
         # Handle different JSON structures
         if isinstance(data, list):
-            raw_plugins = data
+            raw_plugins = cast("list[dict[str, Any]]", data)
         elif isinstance(data, dict) and "plugins" in data:
-            raw_plugins = data["plugins"]
+            raw_plugins = cast("list[dict[str, Any]]", data["plugins"])
         else:
             logger.warning("Unknown JSON structure", source=source.name)
             return []
@@ -140,7 +141,8 @@ class PluginScraper:
             description = raw.get("description", "") or ""
 
             # Extract keywords
-            keywords_raw = raw.get("keywords", [])
+            keywords_raw: str | list[str] = raw.get("keywords", [])
+            keywords: list[str]
             if isinstance(keywords_raw, str):
                 keywords = [k.strip() for k in keywords_raw.split(",")]
             else:
@@ -150,13 +152,14 @@ class PluginScraper:
             category = raw.get("category", "") or categorize_plugin(name, description, keywords)
 
             # Build repository URL
-            repo_url = ""
+            repo_url: str = ""
             if "repository" in raw:
-                repo = raw["repository"]
+                repo: Any = raw["repository"]
                 if isinstance(repo, str):
                     repo_url = repo
                 elif isinstance(repo, dict):
-                    repo_url = repo.get("url", "")
+                    repo_dict = cast("dict[str, str]", repo)
+                    repo_url = repo_dict.get("url", "")
 
             # If source is from a GitHub raw file, try to infer repo from source path
             if not repo_url and "source" in raw:
@@ -167,13 +170,16 @@ class PluginScraper:
                     repo_url = f"https://github.com/jeremylongshore/claude-code-plugins-plus-skills/tree/main/plugins/{plugin_name}"
 
             # Author info
-            author_raw = raw.get("author", {})
+            author_raw: Any = raw.get("author", {})
+            author_name: str
+            author_url: str
             if isinstance(author_raw, str):
                 author_name = author_raw
                 author_url = ""
             elif isinstance(author_raw, dict):
-                author_name = author_raw.get("name", "")
-                author_url = author_raw.get("url", "") or author_raw.get("homepage", "")
+                author_dict = cast("dict[str, str]", author_raw)
+                author_name = author_dict.get("name", "")
+                author_url = author_dict.get("url", "") or author_dict.get("homepage", "")
             else:
                 author_name = ""
                 author_url = ""
@@ -277,7 +283,7 @@ async def run_scraper() -> list[dict[str, Any]]:
         plugins = await scraper.scrape_all()
 
         # Enrich with GitHub data (rate limited)
-        enriched = []
+        enriched: list[dict[str, Any]] = []
         for plugin in plugins[:50]:  # Limit to avoid rate limits
             enriched_plugin = await scraper.enrich_with_github(plugin)
             enriched.append(enriched_plugin)

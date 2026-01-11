@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}All Categories{% endblock %}
+{% block description %}Browse {{ total_plugins }} Claude Code plugins across {{ categories|length }} categories.{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Breadcrumb -->
+    <nav class="mb-6 text-sm">
+        <ol class="flex items-center gap-2 text-gray-500">
+            <li><a href="/" class="hover:text-gray-700">Home</a></li>
+            <li>/</li>
+            <li class="text-gray-900">Categories</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">All Categories</h1>
+        <p class="text-gray-500">{{ total_plugins }} plugins across {{ categories|length }} categories</p>
+    </div>
+
+    <!-- Category Grid -->
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {% for category, count in categories.items() %}
+        {% set info = category|category_info %}
+        <a href="/categories/{{ category }}.html"
+           class="group bg-white rounded-xl border border-gray-200 p-6 hover:border-claude-300 hover:shadow-md transition-all">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 bg-{{ info.color }}-100 text-{{ info.color }}-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i data-feather="{{ info.icon }}" class="w-7 h-7"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-gray-900 capitalize text-lg group-hover:text-claude-600">
+                        {{ category }}
+                    </h3>
+                    <p class="text-gray-500">{{ count }} plugin{{ 's' if count != 1 else '' }}</p>
+                </div>
+                <i data-feather="chevron-right" class="w-5 h-5 text-gray-300 group-hover:text-claude-500 group-hover:translate-x-1 transition-all"></i>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

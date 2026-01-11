@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}PlugPack{% endblock %}
+{% block description %}Discover {{ total_plugins }}+ Claude Code plugins with rich metadata. Find the perfect extensions for your AI-powered development workflow.{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient-to-br from-claude-500 to-claude-700 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+        <div class="text-center">
+            <h1 class="text-4xl md:text-6xl font-bold mb-6">
+                The Ultimate Claude Code<br>Plugin Directory
+            </h1>
+            <p class="text-xl md:text-2xl text-claude-100 mb-8 max-w-3xl mx-auto">
+                Discover {{ total_plugins }}+ plugins with rich metadata, quality signals, and smart recommendations.
+                Find the perfect extensions in 5 minutes, not 5 hours.
+            </p>
+
+            <!-- Search Box -->
+            <div class="max-w-2xl mx-auto" x-data="{ query: '', results: [], loading: false }" @keydown.escape="query = ''; results = []">
+                <div class="relative">
+                    <input
+                        type="text"
+                        x-model="query"
+                        @input.debounce.300ms="
+                            if (query.length >= 2) {
+                                loading = true;
+                                fetch('/data/search-index.json')
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        const q = query.toLowerCase();
+                                        results = data.filter(p =>
+                                            p.name.toLowerCase().includes(q) ||
+                                            p.description.toLowerCase().includes(q) ||
+                                            p.category.toLowerCase().includes(q)
+                                        ).slice(0, 8);
+                                        loading = false;
+                                    });
+                            } else {
+                                results = [];
+                            }
+                        "
+                        placeholder="Search plugins..."
+                        class="w-full px-6 py-4 text-lg rounded-xl bg-white text-gray-900 shadow-lg focus:outline-none focus:ring-4 focus:ring-claude-300"
+                    >
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                        <i data-feather="search" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <!-- Search Results Dropdown -->
+                <div x-show="results.length > 0" x-cloak
+                     class="absolute left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50 max-w-2xl mx-auto">
+                    <template x-for="plugin in results" :key="plugin.slug">
+                        <a :href="'/plugins/' + plugin.slug + '.html'"
+                           class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0 text-left">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium text-gray-900" x-text="plugin.name"></div>
+                                    <div class="text-sm text-gray-500 truncate" x-text="plugin.description"></div>
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-gray-400">
+                                    <span x-text="plugin.category" class="px-2 py-0.5 bg-gray-100 rounded"></span>
+                                </div>
+                            </div>
+                        </a>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Bar -->
+<section class="bg-white border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div>
+                <div class="text-3xl font-bold text-claude-500">{{ total_plugins }}</div>
+                <div class="text-sm text-gray-500">Plugins</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold text-claude-500">{{ total_categories }}</div>
+                <div class="text-sm text-gray-500">Categories</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold text-claude-500">{{ featured_plugins|length }}</div>
+                <div class="text-sm text-gray-500">Verified</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold text-claude-500">Daily</div>
+                <div class="text-sm text-gray-500">Updates</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Categories -->
+<section class="bg-gray-50 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Browse by Category</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {% for category in categories %}
+            {% set info = category|category_info %}
+            <a href="/categories/{{ category }}.html"
+               class="flex items-center gap-2 px-4 py-3 bg-white rounded-lg border border-gray-200 hover:border-claude-300 hover:shadow-sm transition-all">
+                <i data-feather="{{ info.icon }}" class="w-4 h-4 text-{{ info.color }}-500"></i>
+                <span class="font-medium text-gray-700 capitalize">{{ category }}</span>
+                <span class="ml-auto text-sm text-gray-400">{{ category_counts[category] }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Featured Plugins -->
+<section class="py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Popular Plugins</h2>
+            <a href="/plugins/" class="text-claude-500 hover:text-claude-600 font-medium flex items-center gap-1">
+                View all <i data-feather="arrow-right" class="w-4 h-4"></i>
+            </a>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {% for plugin in plugins %}
+            <a href="/plugins/{{ plugin.slug }}.html"
+               class="group bg-white rounded-xl border border-gray-200 p-5 hover:border-claude-300 hover:shadow-md transition-all">
+                <div class="flex items-start justify-between mb-3">
+                    <div>
+                        <h3 class="font-semibold text-gray-900 group-hover:text-claude-600">{{ plugin.name }}</h3>
+                        {% if plugin.author_name %}
+                        <p class="text-sm text-gray-500">by {{ plugin.author_name }}</p>
+                        {% endif %}
+                    </div>
+                    {% if plugin.is_verified %}
+                    <span class="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">Verified</span>
+                    {% endif %}
+                </div>
+
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ plugin.description }}</p>
+
+                <div class="flex items-center justify-between text-sm">
+                    <span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded capitalize">{{ plugin.category }}</span>
+                    <div class="flex items-center gap-3 text-gray-400">
+                        {% if plugin.github_stars %}
+                        <span class="flex items-center gap-1">
+                            <i data-feather="star" class="w-4 h-4"></i>
+                            {{ plugin.github_stars|format_number }}
+                        </span>
+                        {% endif %}
+                        {% set badge = plugin.maintenance_status|maintenance_badge %}
+                        <span class="px-2 py-0.5 text-xs {{ badge.class }} rounded">{{ badge.text }}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="bg-white py-16 border-t">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-2xl font-bold text-gray-900 text-center mb-12">Find the Perfect Plugin in Seconds</h2>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="text-center">
+                <div class="w-12 h-12 bg-claude-100 text-claude-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <i data-feather="search" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-semibold text-gray-900 mb-2">Search & Browse</h3>
+                <p class="text-gray-600">Find plugins by name, category, or keyword. Our rich metadata helps you discover exactly what you need.</p>
+            </div>
+
+            <div class="text-center">
+                <div class="w-12 h-12 bg-claude-100 text-claude-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <i data-feather="check-circle" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-semibold text-gray-900 mb-2">Check Quality</h3>
+                <p class="text-gray-600">See maintenance status, GitHub stars, and verification badges. Make informed decisions before installing.</p>
+            </div>
+
+            <div class="text-center">
+                <div class="w-12 h-12 bg-claude-100 text-claude-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <i data-feather="download" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-semibold text-gray-900 mb-2">Install & Go</h3>
+                <p class="text-gray-600">Copy the install command and run it in Claude Code. Start using your new plugin immediately.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

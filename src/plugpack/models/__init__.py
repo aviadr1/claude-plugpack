@@ -87,7 +87,9 @@ class PluginBase(SQLModel):
 class Plugin(PluginBase, TimestampMixin, table=True):
     """Plugin database model."""
 
-    __tablename__ = "plugins"
+    # SQLModel requires __tablename__ as string but stubs declare it as declared_attr
+    # See: https://github.com/fastapi/sqlmodel/issues/98
+    __tablename__ = "plugins"  # pyright: ignore[reportAssignmentType, reportIncompatibleVariableOverride]
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
@@ -177,7 +179,9 @@ class PackBase(SQLModel):
 class Pack(PackBase, TimestampMixin, table=True):
     """Pack database model."""
 
-    __tablename__ = "packs"
+    # SQLModel requires __tablename__ as string but stubs declare it as declared_attr
+    # See: https://github.com/fastapi/sqlmodel/issues/98
+    __tablename__ = "packs"  # pyright: ignore[reportAssignmentType, reportIncompatibleVariableOverride]
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
@@ -189,7 +193,9 @@ class Pack(PackBase, TimestampMixin, table=True):
 class PackPlugin(TimestampMixin, table=True):
     """Many-to-many relationship between Packs and Plugins."""
 
-    __tablename__ = "pack_plugins"
+    # SQLModel requires __tablename__ as string but stubs declare it as declared_attr
+    # See: https://github.com/fastapi/sqlmodel/issues/98
+    __tablename__ = "pack_plugins"  # pyright: ignore[reportAssignmentType, reportIncompatibleVariableOverride]
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     pack_id: UUID = Field(foreign_key="packs.id")
@@ -235,7 +241,9 @@ class ReviewBase(SQLModel):
 class Review(ReviewBase, TimestampMixin, table=True):
     """Review database model."""
 
-    __tablename__ = "reviews"
+    # SQLModel requires __tablename__ as string but stubs declare it as declared_attr
+    # See: https://github.com/fastapi/sqlmodel/issues/98
+    __tablename__ = "reviews"  # pyright: ignore[reportAssignmentType, reportIncompatibleVariableOverride]
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
@@ -282,7 +290,9 @@ class UserBase(SQLModel):
 class User(UserBase, TimestampMixin, table=True):
     """User database model."""
 
-    __tablename__ = "users"
+    # SQLModel requires __tablename__ as string but stubs declare it as declared_attr
+    # See: https://github.com/fastapi/sqlmodel/issues/98
+    __tablename__ = "users"  # pyright: ignore[reportAssignmentType, reportIncompatibleVariableOverride]
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 

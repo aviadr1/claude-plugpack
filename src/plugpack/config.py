@@ -66,9 +66,7 @@ class Settings(BaseSettings):
                 raise ValueError("APP_SECRET_KEY must be set to a secure value in production")
             if "plugpack_dev_password" in self.database_url:
                 raise ValueError("DATABASE_URL must be set to production database in production")
-            # Meilisearch is optional - warn but don't fail if not configured
-            # if self.meilisearch_api_key == "plugpack_meili_dev_key":
-            #     raise ValueError("MEILISEARCH_API_KEY must be set to production key in production")
+            # Meilisearch is optional in production - search falls back to database
         return self
 
     @computed_field  # type: ignore[prop-decorator]

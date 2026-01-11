@@ -4,11 +4,14 @@ Claude Plugin Pack Hub - FastAPI Application
 The Ultimate Directory for Claude Code Extensions.
 """
 
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import FastAPI, Request
+from fastapi import Path as PathParam
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -22,6 +25,17 @@ from plugpack.database import close_db, init_db
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
+
+# Slug validation pattern
+SLUG_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$")
+
+
+def validate_slug(slug: str) -> str:
+    """Validate and sanitize a slug parameter."""
+    if len(slug) > 100:
+        slug = slug[:100]
+    # Remove any potentially dangerous characters
+    return re.sub(r"[^a-z0-9-]", "", slug.lower())
 
 
 @asynccontextmanager
@@ -48,15 +62,30 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
 # Mount static files
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# Setup templates
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+# Setup templates with auto-escaping enabled (default in Jinja2)
+templates = Jinja2Templates(directory=TEMPLATES_DIR, autoescape=True)
 
 # Include API routes
 app.include_router(api_router, prefix="/api")
+
+
+# Type alias for validated slug
+SlugParam = Annotated[
+    str, PathParam(min_length=1, max_length=100, pattern=r"^[a-z0-9-]+$")
+]
 
 
 # =============================================================================
@@ -88,12 +117,13 @@ async def plugins_list(request: Request) -> Any:
 
 
 @app.get("/plugins/{slug}", response_class=HTMLResponse)
-async def plugin_detail(request: Request, slug: str) -> Any:
+async def plugin_detail(request: Request, slug: SlugParam) -> Any:
     """Plugin detail page."""
+    safe_slug = validate_slug(slug)
     return templates.TemplateResponse(
         request,
         "pages/plugin_detail.html",
-        {"title": f"Plugin: {slug}", "slug": slug},
+        {"title": f"Plugin: {safe_slug}", "slug": safe_slug},
     )
 
 
@@ -108,22 +138,25 @@ async def packs_list(request: Request) -> Any:
 
 
 @app.get("/packs/{slug}", response_class=HTMLResponse)
-async def pack_detail(request: Request, slug: str) -> Any:
+async def pack_detail(request: Request, slug: SlugParam) -> Any:
     """Pack detail page."""
+    safe_slug = validate_slug(slug)
     return templates.TemplateResponse(
         request,
         "pages/pack_detail.html",
-        {"title": f"Pack: {slug}", "slug": slug},
+        {"title": f"Pack: {safe_slug}", "slug": safe_slug},
     )
 
 
 @app.get("/search", response_class=HTMLResponse)
 async def search_page(request: Request, q: str = "") -> Any:
     """Search results page."""
+    # Sanitize search query for display
+    safe_query = q[:200] if len(q) > 200 else q
     return templates.TemplateResponse(
         request,
         "pages/search.html",
-        {"title": f"Search: {q}" if q else "Search", "query": q},
+        {"title": f"Search: {safe_query}" if safe_query else "Search", "query": safe_query},
     )
 
 
@@ -134,7 +167,7 @@ async def search_page(request: Request, q: str = "") -> Any:
 
 @app.get("/health")
 async def health_check() -> dict[str, str]:
-    """Health check endpoint."""
+    """Health check endpoint for monitoring and load balancers."""
     return {"status": "healthy", "version": __version__}
 
 

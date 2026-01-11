@@ -7,11 +7,17 @@ SQLModel combines SQLAlchemy and Pydantic, giving us:
 - Automatic OpenAPI schema generation
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship, SQLModel
+
+
+def utc_now() -> datetime:
+    """Return current UTC time as timezone-aware datetime."""
+    return datetime.now(UTC)
+
 
 # =============================================================================
 # Base Models
@@ -21,8 +27,8 @@ from sqlmodel import Field, Relationship, SQLModel
 class TimestampMixin(SQLModel):
     """Mixin for created_at and updated_at timestamps."""
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
 
 # =============================================================================

@@ -57,8 +57,30 @@ class PluginScraper:
 
                 logger.info("Scraped plugins", source=source.name, count=len(plugins))
 
-            except Exception as e:
-                logger.error("Failed to scrape source", source=source.name, error=str(e))
+            except httpx.HTTPStatusError as e:
+                logger.error(
+                    "HTTP error scraping source",
+                    source=source.name,
+                    status_code=e.response.status_code,
+                    error=str(e),
+                )
+            except httpx.RequestError as e:
+                logger.error(
+                    "Network error scraping source",
+                    source=source.name,
+                    error=str(e),
+                )
+            except ValueError as e:
+                logger.error(
+                    "Data validation error",
+                    source=source.name,
+                    error=str(e),
+                )
+            except Exception:
+                logger.exception(
+                    "Unexpected error scraping source",
+                    source=source.name,
+                )
 
         return list(all_plugins.values())
 

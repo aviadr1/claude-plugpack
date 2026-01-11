@@ -240,13 +240,91 @@ pip install -e ".[dev]"
 - Use FastAPI's `HTTPException` for expected errors
 - Log unexpected errors with `structlog`
 
-## Deployment Notes
+## Deployment (Railway)
 
-The app is designed for easy deployment:
+The app deploys to Railway for production. Claude can operate autonomously with a `RAILWAY_TOKEN`.
 
-1. **Vercel/Railway**: Works out of the box
-2. **Docker**: Can containerize with standard Python image
-3. **VPS**: `uvicorn plugpack.main:app --host 0.0.0.0 --port 8000`
+### Deployment Commands
+
+```bash
+# DEPLOY
+make deploy              # Deploy to Railway
+make deploy-status       # Check deployment status
+make deploy-logs         # View production logs
+
+# REMOTE OPERATIONS
+make deploy-migrate      # Run migrations on Railway
+make deploy-seed         # Seed production database
+make deploy-shell        # Open shell on Railway
+
+# ENVIRONMENT
+make deploy-env          # List Railway environment variables
+make deploy-env-set key=GITHUB_TOKEN value=xxx  # Set env var
+
+# LOCAL DOCKER TEST
+make docker-build        # Build production Docker image
+make docker-run-local    # Test production image locally
+```
+
+### First-Time Railway Setup
+
+1. **Install Railway CLI**: `npm install -g @railway/cli`
+2. **Login**: `railway login` or `railway login --token $RAILWAY_TOKEN`
+3. **Link project**: `railway link` (select or create project)
+4. **Add PostgreSQL**: In Railway dashboard, add PostgreSQL service
+5. **Add Redis**: In Railway dashboard, add Redis service
+6. **Set environment variables**:
+   ```bash
+   railway variables set APP_ENV=production
+   railway variables set MEILISEARCH_URL=https://your-meili-instance
+   railway variables set MEILISEARCH_API_KEY=your-key
+   ```
+7. **Deploy**: `make deploy`
+8. **Run migrations**: `make deploy-migrate`
+9. **Seed data**: `make deploy-seed`
+
+### Autonomous Deployment Workflow
+
+When Claude has a `RAILWAY_TOKEN`, it can:
+
+1. **Deploy changes after validation**:
+   ```bash
+   make validate && make deploy
+   ```
+
+2. **Debug production issues**:
+   ```bash
+   make deploy-logs
+   ```
+
+3. **Run database operations**:
+   ```bash
+   make deploy-migrate
+   make deploy-seed
+   ```
+
+4. **Manage configuration**:
+   ```bash
+   make deploy-env
+   make deploy-env-set key=NEW_VAR value=xxx
+   ```
+
+### Production Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Auto | Set by Railway PostgreSQL addon |
+| `REDIS_URL` | Auto | Set by Railway Redis addon |
+| `MEILISEARCH_URL` | Yes | Meilisearch Cloud or self-hosted URL |
+| `MEILISEARCH_API_KEY` | Yes | Meilisearch API key |
+| `APP_ENV` | Yes | Set to `production` |
+| `GITHUB_TOKEN` | Optional | For scraping GitHub data |
+
+### Health Monitoring
+
+- Health endpoint: `GET /health`
+- Railway auto-restarts on failure
+- Logs available via `make deploy-logs`
 
 ## Current Status
 
@@ -259,6 +337,9 @@ The app is designed for easy deployment:
 - [x] Server-rendered templates with HTMX
 - [x] Development tooling (make, ruff, pytest)
 - [x] Docker Compose for local services
+- [x] Railway deployment configuration
+- [x] Production Dockerfile
+- [x] CI/CD with GitHub Actions
 
 ### What's Next (PRD Priorities)
 1. [ ] Seed database with scraped plugins

@@ -7,7 +7,7 @@
 # of these commands to develop, test, and deploy the application.
 # ============================================================================
 
-.PHONY: help install dev test lint format typecheck check docker-up docker-down docker-logs db-migrate db-seed clean
+.PHONY: help install dev test lint format typecheck check docker-up docker-down docker-logs db-migrate db-seed clean deploy deploy-logs deploy-status deploy-run deploy-migrate deploy-seed deploy-shell deploy-env deploy-env-set docker-build docker-run-local
 
 # Default Python
 PYTHON := python3
@@ -168,3 +168,45 @@ validate: check test ## Run all validations (lint, format, typecheck, tests)
 
 ci: validate ## Run CI pipeline locally
 	@echo "$(GREEN)CI pipeline passed!$(NC)"
+
+# =============================================================================
+# Deployment (Railway)
+# =============================================================================
+
+deploy: ## Deploy to Railway
+	@echo "$(GREEN)Deploying to Railway...$(NC)"
+	railway up
+
+deploy-logs: ## View Railway deployment logs
+	railway logs
+
+deploy-status: ## Check Railway deployment status
+	railway status
+
+deploy-run: ## Run a command on Railway (usage: make deploy-run cmd="alembic upgrade head")
+	railway run $(cmd)
+
+deploy-migrate: ## Run migrations on Railway
+	railway run alembic upgrade head
+
+deploy-seed: ## Seed production database
+	railway run python -m plugpack.scripts.seed
+
+deploy-shell: ## Open shell on Railway
+	railway shell
+
+deploy-env: ## List Railway environment variables
+	railway variables
+
+deploy-env-set: ## Set Railway env var (usage: make deploy-env-set key=GITHUB_TOKEN value=xxx)
+	railway variables set $(key)=$(value)
+
+# =============================================================================
+# Docker Build (for testing production image locally)
+# =============================================================================
+
+docker-build: ## Build production Docker image
+	docker build -t plugpack:latest .
+
+docker-run-local: ## Run production image locally
+	docker run -p 8000:8000 --env-file .env plugpack:latest

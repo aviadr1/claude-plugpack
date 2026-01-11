@@ -5,7 +5,7 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "echo 'Starting app...' && echo 'DATABASE_URL set:' ${DATABASE_URL:+yes} && echo 'Running alembic...' && alembic upgrade head && echo 'Alembic done, starting uvicorn...' && uvicorn plugpack.main:app --host 0.0.0.0 --port ${PORT:-8000}",
+    "startCommand": "echo 'Step 1: Starting' && echo 'Step 2: Env check' && env | grep -E '^(DATABASE|REDIS|APP)' && echo 'Step 3: Alembic' && alembic upgrade head && echo 'Step 4: Uvicorn' && uvicorn plugpack.main:app --host 0.0.0.0 --port ${PORT:-8000}",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",

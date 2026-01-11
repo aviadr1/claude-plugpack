@@ -1,0 +1,25 @@
+{
+  "$schema": "https://claude.ai/schemas/settings.json",
+  "plugins": {
+    "enabled": true,
+    "installed": [
+      "anthropic/plugin-dev",
+      "anthropic/code-review",
+      "anthropic/commit-commands",
+      "anthropic/feature-dev",
+      "anthropic/security-guidance",
+      "anthropic/frontend-design",
+      "anthropic/pr-review-toolkit",
+      "anthropic/hookify"
+    ]
+  },
+  "hooks": {
+    "PreCommit": [],
+    "PostFileWrite": []
+  },
+  "permissions": {
+    "allowedDirectories": [
+      "/home/user/claude-plugpack"
+    ]
+  }
+}

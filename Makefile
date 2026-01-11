@@ -9,8 +9,8 @@
 
 .PHONY: help install dev test lint format typecheck check docker-up docker-down docker-logs db-migrate db-seed clean deploy deploy-logs deploy-status deploy-run deploy-migrate deploy-seed deploy-shell deploy-env deploy-env-set docker-build docker-run-local
 
-# Default Python
-PYTHON := python3
+# Use uv for package management
+UV := uv
 VENV := .venv
 BIN := $(VENV)/bin
 
@@ -27,15 +27,12 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
 
 # =============================================================================
-# Setup & Installation
+# Setup & Installation (using uv)
 # =============================================================================
 
-install: ## Create venv and install all dependencies
-	@echo "$(GREEN)Creating virtual environment...$(NC)"
-	$(PYTHON) -m venv $(VENV)
-	@echo "$(GREEN)Installing dependencies...$(NC)"
-	$(BIN)/pip install --upgrade pip
-	$(BIN)/pip install -e ".[dev]"
+install: ## Install all dependencies using uv
+	@echo "$(GREEN)Installing dependencies with uv...$(NC)"
+	$(UV) sync
 	@echo "$(GREEN)Installation complete!$(NC)"
 
 setup: install docker-up db-migrate ## Full setup: install deps, start services, run migrations
@@ -46,32 +43,32 @@ setup: install docker-up db-migrate ## Full setup: install deps, start services,
 # =============================================================================
 
 dev: ## Start development server with hot reload
-	$(BIN)/uvicorn plugpack.main:app --reload --host 0.0.0.0 --port 8000
+	$(UV) run uvicorn plugpack.main:app --reload --host 0.0.0.0 --port 8000
 
 run: ## Start production server
-	$(BIN)/uvicorn plugpack.main:app --host 0.0.0.0 --port 8000
+	$(UV) run uvicorn plugpack.main:app --host 0.0.0.0 --port 8000
 
 shell: ## Open Python shell with app context
-	$(BIN)/python -i -c "from plugpack.main import app; print('App loaded. Use app to access FastAPI instance.')"
+	$(UV) run python -i -c "from plugpack.main import app; print('App loaded. Use app to access FastAPI instance.')"
 
 # =============================================================================
 # Code Quality
 # =============================================================================
 
 lint: ## Run linter (ruff)
-	$(BIN)/ruff check src tests
+	$(UV) run ruff check src tests
 
 lint-fix: ## Run linter and auto-fix issues
-	$(BIN)/ruff check --fix src tests
+	$(UV) run ruff check --fix src tests
 
 format: ## Format code with ruff
-	$(BIN)/ruff format src tests
+	$(UV) run ruff format src tests
 
 format-check: ## Check code formatting
-	$(BIN)/ruff format --check src tests
+	$(UV) run ruff format --check src tests
 
 typecheck: ## Run type checker (pyright)
-	$(BIN)/pyright src
+	$(UV) run pyright src
 
 check: lint format-check typecheck ## Run all code quality checks
 	@echo "$(GREEN)All checks passed!$(NC)"
@@ -81,36 +78,36 @@ check: lint format-check typecheck ## Run all code quality checks
 # =============================================================================
 
 test: ## Run tests
-	$(BIN)/pytest
+	$(UV) run pytest
 
 test-fast: ## Run tests in parallel
-	$(BIN)/pytest -n auto
+	$(UV) run pytest -n auto
 
 test-cov: ## Run tests with coverage report
-	$(BIN)/pytest --cov=src/plugpack --cov-report=term-missing --cov-report=html
+	$(UV) run pytest --cov=src/plugpack --cov-report=term-missing --cov-report=html
 
 test-watch: ## Run tests in watch mode
-	$(BIN)/ptw -- -v
+	$(UV) run ptw -- -v
 
 # =============================================================================
 # Database
 # =============================================================================
 
 db-migrate: ## Run database migrations
-	$(BIN)/alembic upgrade head
+	$(UV) run alembic upgrade head
 
 db-migration: ## Create a new migration (usage: make db-migration msg="add users table")
-	$(BIN)/alembic revision --autogenerate -m "$(msg)"
+	$(UV) run alembic revision --autogenerate -m "$(msg)"
 
 db-rollback: ## Rollback last migration
-	$(BIN)/alembic downgrade -1
+	$(UV) run alembic downgrade -1
 
 db-reset: ## Reset database (drop all and recreate)
-	$(BIN)/alembic downgrade base
-	$(BIN)/alembic upgrade head
+	$(UV) run alembic downgrade base
+	$(UV) run alembic upgrade head
 
 db-seed: ## Seed database with sample data
-	$(BIN)/python -m plugpack.scripts.seed
+	$(UV) run python -m plugpack.scripts.seed
 
 db-shell: ## Open psql shell
 	docker exec -it plugpack-postgres psql -U plugpack -d plugpack
@@ -143,10 +140,10 @@ docker-status: ## Show Docker service status
 # =============================================================================
 
 scrape: ## Run the plugin scraper
-	$(BIN)/python -m plugpack.scraper.run
+	$(UV) run python -m plugpack.scraper.run
 
 scrape-test: ## Test scraper on a single source
-	$(BIN)/python -m plugpack.scraper.test
+	$(UV) run python -m plugpack.scraper.test
 
 # =============================================================================
 # Utilities

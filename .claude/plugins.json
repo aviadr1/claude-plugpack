@@ -1,0 +1,44 @@
+{
+  "plugins": [
+    {
+      "name": "plugin-dev",
+      "source": "anthropic",
+      "description": "Comprehensive toolkit for developing Claude Code plugins"
+    },
+    {
+      "name": "code-review",
+      "source": "anthropic",
+      "description": "Automated code review for pull requests"
+    },
+    {
+      "name": "commit-commands",
+      "source": "anthropic",
+      "description": "Commands for git commit workflows"
+    },
+    {
+      "name": "feature-dev",
+      "source": "anthropic",
+      "description": "Comprehensive feature development workflow"
+    },
+    {
+      "name": "security-guidance",
+      "source": "anthropic",
+      "description": "Security reminder hook"
+    },
+    {
+      "name": "frontend-design",
+      "source": "anthropic",
+      "description": "Create distinctive frontend interfaces"
+    },
+    {
+      "name": "pr-review-toolkit",
+      "source": "anthropic",
+      "description": "Comprehensive PR review agents"
+    },
+    {
+      "name": "hookify",
+      "source": "anthropic",
+      "description": "Create custom hooks to prevent unwanted behaviors"
+    }
+  ]
+}

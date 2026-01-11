@@ -17,6 +17,7 @@ A community-powered aggregator that solves plugin discovery through rich metadat
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
+| Package Mgmt | uv | Fast Python package manager |
 | Framework | FastAPI | Async Python web framework |
 | Database | PostgreSQL | Primary data store |
 | ORM | SQLModel | SQLAlchemy + Pydantic combined |
@@ -31,8 +32,11 @@ A community-powered aggregator that solves plugin discovery through rich metadat
 
 ## Quick Commands
 
+All commands use `uv` for fast, reliable package management.
+
 ```bash
 # SETUP (first time)
+make install        # Install deps with uv sync
 make setup          # Install deps, start Docker, run migrations
 
 # DEVELOPMENT
@@ -40,10 +44,10 @@ make dev            # Start dev server at http://localhost:8000
 make shell          # Open Python shell with app context
 
 # CODE QUALITY
-make lint           # Run linter
+make lint           # Run linter (ruff)
 make lint-fix       # Auto-fix lint issues
-make format         # Format code
-make typecheck      # Run type checker
+make format         # Format code (ruff)
+make typecheck      # Run type checker (pyright)
 make check          # Run all quality checks
 
 # TESTING
@@ -64,11 +68,15 @@ make docker-logs    # View logs
 make docker-reset   # Reset volumes and restart
 
 # SCRAPING
-make scrape         # Run plugin scraper
+make scrape         # Run plugin scraper (fetches from official store)
 
 # FULL VALIDATION
 make validate       # Run all checks + tests
 make ci             # Simulate CI pipeline
+
+# DEPLOYMENT
+make deploy         # Deploy to Railway
+make deploy-logs    # View production logs
 ```
 
 ## Project Structure

@@ -5,8 +5,9 @@ Plugin API endpoints.
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import col, select
 
 from plugpack.database import get_db
 from plugpack.models import Plugin, PluginRead
@@ -29,21 +30,21 @@ async def list_plugins(
 
     # Apply filters
     if category:
-        query = query.where(Plugin.category == category)
+        query = query.where(col(Plugin.category) == category)
     if featured is not None:
-        query = query.where(Plugin.is_featured == featured)
+        query = query.where(col(Plugin.is_featured) == featured)
     if verified is not None:
-        query = query.where(Plugin.is_verified == verified)
+        query = query.where(col(Plugin.is_verified) == verified)
     if search:
         search_pattern = f"%{search}%"
         query = query.where(
-            (Plugin.name.ilike(search_pattern))
-            | (Plugin.description.ilike(search_pattern))
-            | (Plugin.keywords.ilike(search_pattern))
+            col(Plugin.name).ilike(search_pattern)
+            | col(Plugin.description).ilike(search_pattern)
+            | col(Plugin.keywords).ilike(search_pattern)
         )
 
     # Order by featured first, then by stars
-    query = query.order_by(Plugin.is_featured.desc(), Plugin.github_stars.desc())
+    query = query.order_by(col(Plugin.is_featured).desc(), col(Plugin.github_stars).desc())
 
     # Pagination
     query = query.offset(skip).limit(limit)
@@ -58,9 +59,9 @@ async def count_plugins(
     category: str | None = None,
 ) -> dict[str, int]:
     """Get total plugin count."""
-    query = select(func.count(Plugin.id))
+    query = select(func.count(col(Plugin.id)))
     if category:
-        query = query.where(Plugin.category == category)
+        query = query.where(col(Plugin.category) == category)
 
     result = await db.execute(query)
     count = result.scalar() or 0
@@ -72,7 +73,7 @@ async def list_categories(
     db: AsyncSession = Depends(get_db),
 ) -> list[dict[str, str | int]]:
     """List all categories with counts."""
-    query = select(Plugin.category, func.count(Plugin.id)).group_by(Plugin.category)
+    query = select(col(Plugin.category), func.count(col(Plugin.id))).group_by(col(Plugin.category))
     result = await db.execute(query)
     categories = [{"name": row[0], "count": row[1]} for row in result.all()]
     return sorted(categories, key=lambda x: x["count"], reverse=True)
@@ -84,7 +85,7 @@ async def get_plugin(
     db: AsyncSession = Depends(get_db),
 ) -> Plugin:
     """Get a plugin by ID."""
-    result = await db.execute(select(Plugin).where(Plugin.id == plugin_id))
+    result = await db.execute(select(Plugin).where(col(Plugin.id) == plugin_id))
     plugin = result.scalar_one_or_none()
     if not plugin:
         raise HTTPException(status_code=404, detail="Plugin not found")
@@ -97,7 +98,7 @@ async def get_plugin_by_slug(
     db: AsyncSession = Depends(get_db),
 ) -> Plugin:
     """Get a plugin by slug."""
-    result = await db.execute(select(Plugin).where(Plugin.slug == slug))
+    result = await db.execute(select(Plugin).where(col(Plugin.slug) == slug))
     plugin = result.scalar_one_or_none()
     if not plugin:
         raise HTTPException(status_code=404, detail="Plugin not found")

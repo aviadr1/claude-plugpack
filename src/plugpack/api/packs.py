@@ -2,14 +2,15 @@
 Pack API endpoints.
 """
 
-from typing import Any
+from typing import cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlmodel import col, select
 
 from plugpack.database import get_db
 from plugpack.models import Pack, PackPlugin, PluginRead
@@ -47,16 +48,24 @@ class PackDetailResponse(BaseModel):
 # =============================================================================
 
 
-def format_pack_plugins(pack: Pack) -> list[dict[str, Any]]:
-    """Format pack plugins for response."""
+def format_pack_plugins(pack: Pack) -> list[PackPluginResponse]:
+    """Format pack plugins for response.
+
+    Note: This function expects pack.pack_plugins to be eagerly loaded
+    with selectinload to ensure pp.plugin is populated.
+    """
     return [
-        {
-            "plugin": pp.plugin,
-            "phase": pp.phase,
-            "description": pp.description,
-            "commands_to_run": pp.commands_to_run,
-        }
+        PackPluginResponse(
+            # pp.plugin is Plugin (SQLModel), but Pydantic's from_attributes=True
+            # handles conversion to PluginRead. Cast to satisfy type checker.
+            plugin=cast("PluginRead", pp.plugin),
+            phase=pp.phase,
+            description=pp.description,
+            commands_to_run=pp.commands_to_run,
+        )
         for pp in sorted(pack.pack_plugins, key=lambda x: (x.phase_order, x.plugin_order))
+        # Defensive check: relationship may be None if not eagerly loaded
+        if pp.plugin is not None  # pyright: ignore[reportUnnecessaryComparison]
     ]
 
 
@@ -74,16 +83,16 @@ async def list_packs(
     difficulty: str | None = None,
 ) -> list[Pack]:
     """List packs with filtering and pagination."""
-    query = select(Pack).where(Pack.is_published == True)  # noqa: E712
+    query = select(Pack).where(col(Pack.is_published) == True)  # noqa: E712
 
     # Apply filters
     if featured is not None:
-        query = query.where(Pack.is_featured == featured)
+        query = query.where(col(Pack.is_featured) == featured)
     if difficulty:
-        query = query.where(Pack.difficulty == difficulty)
+        query = query.where(col(Pack.difficulty) == difficulty)
 
     # Order by featured first, then by install count
-    query = query.order_by(Pack.is_featured.desc(), Pack.install_count.desc())
+    query = query.order_by(col(Pack.is_featured).desc(), col(Pack.install_count).desc())
 
     # Pagination
     query = query.offset(skip).limit(limit)
@@ -97,7 +106,7 @@ async def count_packs(
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, int]:
     """Get total pack count."""
-    query = select(func.count(Pack.id)).where(Pack.is_published == True)  # noqa: E712
+    query = select(func.count(col(Pack.id))).where(col(Pack.is_published) == True)  # noqa: E712
     result = await db.execute(query)
     count = result.scalar() or 0
     return {"count": count}
@@ -109,10 +118,16 @@ async def get_pack(
     db: AsyncSession = Depends(get_db),
 ) -> PackDetailResponse:
     """Get a pack by ID with its plugins."""
+    # SQLModel Relationship attributes are not properly typed for selectinload
+    # See: https://github.com/microsoft/pyright/issues/10373
     query = (
         select(Pack)
-        .where(Pack.id == pack_id)
-        .options(selectinload(Pack.pack_plugins).selectinload(PackPlugin.plugin))
+        .where(col(Pack.id) == pack_id)
+        .options(
+            selectinload(Pack.pack_plugins).selectinload(  # pyright: ignore[reportArgumentType]
+                PackPlugin.plugin  # pyright: ignore[reportArgumentType]
+            )
+        )
     )
     result = await db.execute(query)
     pack = result.scalar_one_or_none()
@@ -131,10 +146,16 @@ async def get_pack_by_slug(
     db: AsyncSession = Depends(get_db),
 ) -> PackDetailResponse:
     """Get a pack by slug with its plugins."""
+    # SQLModel Relationship attributes are not properly typed for selectinload
+    # See: https://github.com/microsoft/pyright/issues/10373
     query = (
         select(Pack)
-        .where(Pack.slug == slug)
-        .options(selectinload(Pack.pack_plugins).selectinload(PackPlugin.plugin))
+        .where(col(Pack.slug) == slug)
+        .options(
+            selectinload(Pack.pack_plugins).selectinload(  # pyright: ignore[reportArgumentType]
+                PackPlugin.plugin  # pyright: ignore[reportArgumentType]
+            )
+        )
     )
     result = await db.execute(query)
     pack = result.scalar_one_or_none()

@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
@@ -35,6 +35,24 @@ limiter = Limiter(
     default_limits=["200/minute"],
     storage_uri=settings.redis_url if settings.is_production else None,
 )
+
+
+def rate_limit_exceeded_handler(request: Request, exc: Exception) -> Response:
+    """Handle rate limit exceeded errors with a proper response.
+
+    Note: exc is typed as Exception to satisfy FastAPI's ExceptionHandler signature,
+    but will always be RateLimitExceeded when this handler is called.
+    """
+    # Access attributes safely since slowapi's RateLimitExceeded lacks type stubs
+    detail = getattr(exc, "detail", "Rate limit exceeded")
+    retry_after = getattr(exc, "retry_after", None)
+    return Response(
+        content=f"Rate limit exceeded: {detail}",
+        status_code=429,
+        media_type="text/plain",
+        headers={"Retry-After": str(retry_after)} if retry_after else {},
+    )
+
 
 # Slug validation pattern
 SLUG_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$")
@@ -78,7 +96,7 @@ app = FastAPI(
 
 # Add rate limiter
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 # Add CORS middleware with restricted headers
 app.add_middleware(

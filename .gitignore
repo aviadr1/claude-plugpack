@@ -102,9 +102,15 @@ Thumbs.db
 # Don't ignore docker-compose.yml, we need it
 
 # ===========================================
+# Generated Static Site
+# ===========================================
+docs/
+
+# ===========================================
 # Misc
 # ===========================================
 *.bak
 *.tmp
 *.temp
 .cache/
+scraped_plugins.json

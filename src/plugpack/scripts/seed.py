@@ -10,12 +10,30 @@ Usage:
 """
 
 import asyncio
+from typing import TypedDict
 
 import structlog
 
 from plugpack.database import get_session
 from plugpack.models import Pack, Plugin
 from plugpack.scraper.scraper import run_scraper
+
+
+class SamplePackData(TypedDict):
+    """Type definition for sample pack data."""
+
+    name: str
+    slug: str
+    description: str
+    short_description: str
+    curator_name: str
+    tags: str
+    difficulty: str
+    estimated_setup_minutes: int
+    target_audience: str
+    is_published: bool
+    is_featured: bool
+
 
 structlog.configure(
     processors=[
@@ -59,7 +77,7 @@ async def seed_from_scraper() -> None:
             )
             for plugin_data in plugins
         ]
-        
+
         # Bulk insert all plugins
         session.add_all(plugin_objects)
         logger.debug("Added plugins for bulk insert", count=len(plugin_objects))
@@ -72,7 +90,7 @@ async def seed_sample_packs() -> None:
     """Seed sample packs for demo purposes."""
     logger.info("Seeding sample packs...")
 
-    sample_packs = [
+    sample_packs: list[SamplePackData] = [
         {
             "name": "Full-Stack SaaS Starter",
             "slug": "full-stack-saas-starter",
@@ -118,7 +136,7 @@ async def seed_sample_packs() -> None:
     async with get_session() as session:
         # Create pack objects for bulk insert
         pack_objects = [Pack(**pack_data) for pack_data in sample_packs]
-        
+
         # Bulk insert all packs
         session.add_all(pack_objects)
         logger.debug("Added packs for bulk insert", count=len(pack_objects))

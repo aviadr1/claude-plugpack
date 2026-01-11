@@ -34,6 +34,7 @@ class SamplePackData(TypedDict):
     is_published: bool
     is_featured: bool
 
+
 structlog.configure(
     processors=[
         structlog.processors.TimeStamper(fmt="iso"),

@@ -53,6 +53,7 @@ def rate_limit_exceeded_handler(request: Request, exc: Exception) -> Response:
         headers={"Retry-After": str(retry_after)} if retry_after else {},
     )
 
+
 # Slug validation pattern
 SLUG_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$")
 

@@ -7,7 +7,6 @@ Create Date: 2026-01-11 15:00:00
 """
 
 from typing import Sequence, Union
-from uuid import uuid4
 
 import sqlalchemy as sa
 from alembic import op
@@ -23,7 +22,7 @@ def upgrade() -> None:
     # Users table
     op.create_table(
         "users",
-        sa.Column("id", sa.Uuid(), nullable=False, default=uuid4),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("github_id", sa.Integer(), nullable=False),
         sa.Column("github_username", sa.String(100), nullable=False),
         sa.Column("github_avatar_url", sa.String(500), nullable=False, server_default=""),
@@ -42,7 +41,7 @@ def upgrade() -> None:
     # Plugins table
     op.create_table(
         "plugins",
-        sa.Column("id", sa.Uuid(), nullable=False, default=uuid4),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("name", sa.String(100), nullable=False),
         sa.Column("slug", sa.String(100), nullable=False),
         sa.Column("description", sa.String(1000), nullable=False, server_default=""),
@@ -81,7 +80,7 @@ def upgrade() -> None:
     # Packs table
     op.create_table(
         "packs",
-        sa.Column("id", sa.Uuid(), nullable=False, default=uuid4),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("name", sa.String(100), nullable=False),
         sa.Column("slug", sa.String(100), nullable=False),
         sa.Column("description", sa.String(2000), nullable=False, server_default=""),
@@ -109,7 +108,7 @@ def upgrade() -> None:
     # Pack-Plugin junction table
     op.create_table(
         "pack_plugins",
-        sa.Column("id", sa.Uuid(), nullable=False, default=uuid4),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("pack_id", sa.Uuid(), nullable=False),
         sa.Column("plugin_id", sa.Uuid(), nullable=False),
         sa.Column("phase", sa.String(100), nullable=False, server_default=""),
@@ -129,7 +128,7 @@ def upgrade() -> None:
     # Reviews table
     op.create_table(
         "reviews",
-        sa.Column("id", sa.Uuid(), nullable=False, default=uuid4),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("rating", sa.Integer(), nullable=False),
         sa.Column("title", sa.String(200), nullable=False),
         sa.Column("body", sa.String(5000), nullable=False, server_default=""),

@@ -59,6 +59,9 @@ async def seed_from_scraper() -> None:
             session.add(plugin)
             logger.debug("Added plugin", name=plugin.name)
 
+        # Explicitly commit for clarity (context manager also commits on exit)
+        await session.commit()
+
     logger.info("Database seeded successfully!")
 
 
@@ -113,6 +116,9 @@ async def seed_sample_packs() -> None:
             pack = Pack(**pack_data)
             session.add(pack)
             logger.debug("Added pack", name=pack.name)
+
+        # Explicitly commit for clarity (context manager also commits on exit)
+        await session.commit()
 
     logger.info("Sample packs seeded!")
 

@@ -262,8 +262,8 @@ class Review(ReviewBase, TimestampMixin, table=True):
     is_featured: bool = Field(default=False)
 
     # Relationships (use Optional for SQLAlchemy compatibility)
-    plugin: Optional[Plugin] = Relationship(back_populates="reviews")  # noqa: UP045
-    pack: Optional[Pack] = Relationship(back_populates="reviews")  # noqa: UP045
+    plugin: Plugin | None = Relationship(back_populates="reviews")
+    pack: Pack | None = Relationship(back_populates="reviews")
     user: Optional["User"] = Relationship(back_populates="reviews")
 
 

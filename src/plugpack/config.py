@@ -52,14 +52,21 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_production_settings(self) -> "Settings":
         """Ensure required settings are provided in production."""
+        # Convert postgresql:// to postgresql+asyncpg:// for async support
+        if self.database_url.startswith("postgresql://"):
+            object.__setattr__(
+                self,
+                "database_url",
+                self.database_url.replace("postgresql://", "postgresql+asyncpg://", 1),
+            )
+
         if self.app_env == "production":
             # Check for dev defaults that shouldn't be in production
             if "dev-secret-key" in self.app_secret_key:
                 raise ValueError("APP_SECRET_KEY must be set to a secure value in production")
             if "plugpack_dev_password" in self.database_url:
                 raise ValueError("DATABASE_URL must be set to production database in production")
-            if self.meilisearch_api_key == "plugpack_meili_dev_key":
-                raise ValueError("MEILISEARCH_API_KEY must be set to production key in production")
+            # Meilisearch is optional in production - search falls back to database
         return self
 
     @computed_field  # type: ignore[prop-decorator]

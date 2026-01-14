@@ -40,7 +40,7 @@ dependencies = [
     "slowapi>=0.1.9",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     # Testing
     "pytest>=8.3.0",
